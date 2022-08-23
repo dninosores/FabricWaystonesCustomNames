@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "id": "waystones",
+  "id": "waystones-custom-names",
   "version": "${version}",
-  "name": "Waystones",
-  "description": "A better way of transport!",
+  "name": "Waystones (Custom Names)",
+  "description": "A better way of transport! (now with custom names!)",
   "authors": [
-    "LordDeatHunter"
+    "LordDeatHunter",
+    "dninosores"
   ],
   "contact": {
-    "homepage": "https://www.curseforge.com/minecraft/mc-mods/fabric-waystones",
-    "sources": "https://github.com/LordDeatHunter/FabricWaystones",
-    "issues": "https://github.com/LordDeatHunter/FabricWaystones/issues"
+    "homepage": "https://github.com/dninosores/FabricWaystonesCustomNames",
+    "sources": "https://github.com/dninosores/FabricWaystonesCustomNames"
   },
   "license": "MIT License",
   "icon": "assets/waystones/WaystoneIcon.png",
