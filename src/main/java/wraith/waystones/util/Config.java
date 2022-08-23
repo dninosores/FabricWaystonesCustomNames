@@ -59,7 +59,7 @@ public final class Config {
 
     public Set<String> getCustomNames() {
         return new HashSet<>(getStringListFromNbt(configData.getCompound("custom_waystone_names")
-                .getList("custom_names", NbtElement.STRING_TYPE)));
+                .getList("waystone_names", NbtElement.STRING_TYPE)));
     }
 
     public int getMinPerVillage() {
