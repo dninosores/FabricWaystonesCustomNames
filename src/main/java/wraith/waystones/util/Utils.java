@@ -78,7 +78,10 @@ public final class Utils {
     }
 
     private static String pickRandomCustomName() {
-        Set<String> waystoneNames = Waystones.WAYSTONE_STORAGE.getAllWaystoneNames();
+        Set<String> waystoneNames = new HashSet<>();
+        if (Waystones.WAYSTONE_STORAGE != null) {
+            waystoneNames = Waystones.WAYSTONE_STORAGE.getAllWaystoneNames();
+        }
         Set<String> customNames = Config.getInstance().getCustomNames();
         customNames.removeAll(waystoneNames);
         if (customNames.isEmpty()) {
