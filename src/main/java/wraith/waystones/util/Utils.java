@@ -28,9 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
 
 public final class Utils {
 
@@ -62,7 +60,35 @@ public final class Utils {
         return id == null || "".equals(id) ? generateUniqueId() : id;
     }
 
-    private static String generateUniqueId() {
+    public static <T> T getRandomFromSet(Set<T> set) {
+        int index = random.nextInt(set.size());
+        Iterator<T> iter = set.iterator();
+        for (int i = 0; i < index; i++) {
+            iter.next();
+        }
+        return iter.next();
+    }
+
+    public static String generateUniqueId() {
+        if (!Config.getInstance().getUseCustomNames() || Config.getInstance().getCustomNames().isEmpty()) {
+            return generateRandomNameID();
+        } else {
+            return pickRandomCustomName();
+        }
+    }
+
+    private static String pickRandomCustomName() {
+        Set<String> waystoneNames = Waystones.WAYSTONE_STORAGE.getAllWaystoneNames();
+        Set<String> customNames = Config.getInstance().getCustomNames();
+        customNames.removeAll(waystoneNames);
+        if (customNames.isEmpty()) {
+            return getRandomFromSet(Config.getInstance().getCustomNames());
+        } else {
+            return getRandomFromSet(customNames);
+        }
+    }
+
+    private static String generateRandomNameID() {
         if (random.nextDouble() < 1e-4) {
             return "DeatHunter was here";
         }

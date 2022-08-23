@@ -295,6 +295,14 @@ public class WaystoneStorage {
         return value != null ? value.getWaystoneName() : null;
     }
 
+    public HashSet<String> getAllWaystoneNames() {
+        HashSet<String> names = new HashSet<String>();
+        for (WaystoneValue value : WAYSTONES.values()) {
+         names.add(value.getWaystoneName());
+        }
+        return names;
+    }
+
     public void sendCompatData(ServerPlayerEntity player) {
         if (this.compat != null) {
             this.compat.updatePlayerCompatibility(player);

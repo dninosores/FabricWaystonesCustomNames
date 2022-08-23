@@ -1,10 +1,11 @@
 package wraith.waystones.util;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.common.collect.Lists;
+import com.google.gson.*;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Identifier;
@@ -13,8 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.util.LinkedList;
-import java.util.Scanner;
+import java.util.*;
 
 import static wraith.waystones.Waystones.LOGGER;
 
@@ -22,6 +22,7 @@ import static wraith.waystones.Waystones.LOGGER;
 public final class Config {
 
     private static final String CONFIG_FILE = "config/waystones/config.json";
+    private static final String NAMES_LIST_FILE = "config/waystones/waystone-names.txt";
     private static Config instance = null;
     public NbtCompound configData;
     private int difference = 0;
@@ -50,6 +51,15 @@ public final class Config {
 
     public boolean generateInVillages() {
         return configData.getCompound("worldgen").getBoolean("generate_in_villages");
+    }
+
+    public boolean getUseCustomNames() {
+        return configData.getCompound("custom_waystone_names").getBoolean("use_custom_names");
+    }
+
+    public Set<String> getCustomNames() {
+        return new HashSet<>(getStringListFromNbt(configData.getCompound("custom_waystone_names")
+                .getList("custom_names", NbtElement.STRING_TYPE)));
     }
 
     public int getMinPerVillage() {
@@ -184,6 +194,23 @@ public final class Config {
         }
     }
 
+    public List<String> getStringListOrDefault(NbtCompound getFrom, String key, NbtCompound defaults) {
+        if (getFrom.contains(key)) {
+            return getStringListFromNbt(getFrom.getList(key, NbtElement.STRING_TYPE));
+        } else {
+            ++difference;
+            return getStringListFromNbt(getFrom.getList(key, NbtElement.STRING_TYPE));
+        }
+    }
+
+    public NbtList getNbtListFromStringList(Iterable<String> strings) {
+        NbtList list = new NbtList();
+        for (String s : strings) {
+            list.add(NbtString.of(s));
+        }
+        return list;
+    }
+
     private String getStringOrDefault(NbtCompound getFrom, String key, NbtCompound defaults) {
         if (getFrom.contains(key)) {
             return getFrom.getString(key);
@@ -217,6 +244,39 @@ public final class Config {
         } else {
             ++difference;
             return defaults.getInt(key);
+        }
+    }
+
+    public List<String> getStringListFromNbt(NbtList list) {
+        List<String> strings = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            strings.add(list.getString(i));
+        }
+        return strings;
+    }
+
+    public List<String> getStringListFromJSON(JsonArray getFrom) {
+        List<String> strings = new ArrayList<String>();
+        for (JsonElement element : getFrom) {
+            strings.add(element.getAsString());
+        }
+        return strings;
+    }
+
+    public JsonArray getJSONFromStringList(Iterable<String> strings) {
+        JsonArray arr = new JsonArray();
+        for (String s : strings) {
+            arr.add(s);
+        }
+        return arr;
+    }
+
+    public List<String> getStringListOrDefault(JsonObject getFrom, String key, NbtCompound defaults) {
+        if (getFrom.has(key)) {
+            return getStringListFromJSON(getFrom.getAsJsonArray(key));
+        } else {
+            ++difference;
+            return getStringListFromNbt(defaults.getList(key, NbtElement.STRING_TYPE));
         }
     }
 
@@ -296,6 +356,14 @@ public final class Config {
         waystoneStructures.putString("minecraft:village/snowy/houses", "village_waystone");
         defaultConfig.put("add_waystone_structure_piece", waystoneStructures);
 
+        NbtCompound waystoneNames = new NbtCompound();
+        waystoneNames.putBoolean("use_custom_names", false);
+        NbtList customNames = new NbtList();
+        customNames.add(NbtString.of("ExampleName1"));
+        customNames.add(NbtString.of("ExampleName2"));
+        waystoneNames.put("waystone_names", customNames);
+        defaultConfig.put("custom_waystone_names", waystoneNames);
+
         return defaultConfig;
     }
 
@@ -347,6 +415,12 @@ public final class Config {
         NbtCompound structuresTag = getCompoundOrDefault(tag, "add_waystone_structure_piece", defaults);
         structuresTag.getKeys().forEach(key -> structuresJson.addProperty(key, structuresTag.getString(key)));
         json.add("add_waystone_structure_piece", structuresJson);
+
+        JsonObject namesJson = new JsonObject();
+        NbtCompound namesTag = getCompoundOrDefault(tag, "custom_waystone_names", defaults);
+        namesJson.addProperty("use_custom_names", getBooleanOrDefault(namesTag, "use_custom_names", defaults));
+        namesJson.add("waystone_names", getJSONFromStringList(getStringListOrDefault(namesTag, "waystone_names", defaults)));
+        json.add("custom_waystone_names", namesJson);
 
         createFile(json, difference > 0);
         difference = 0;
@@ -426,6 +500,20 @@ public final class Config {
             waystoneStructuresNbt = defaults.getCompound("add_waystone_structure_piece");
         }
         tag.put("add_waystone_structure_piece", waystoneStructuresNbt);
+
+        NbtCompound waystoneNamesNbt = new NbtCompound();
+        if (json.has("custom_waystone_names")) {
+            var waystoneNamesJson = json.get("custom_waystone_names").getAsJsonObject();
+            var defaultWaystoneNames = defaults.getCompound("custom_waystone_names");
+            waystoneNamesNbt.putBoolean("use_custom_names",
+                    getBooleanOrDefault(waystoneNamesJson, "use_custom_names", defaultWaystoneNames));
+            waystoneNamesNbt.put("waystone_names", getNbtListFromStringList(
+                    getStringListOrDefault(waystoneNamesJson, "waystone_names", defaultWaystoneNames)));
+        }else {
+            ++difference;
+            waystoneNamesNbt = defaults.getCompound("custom_waystone_names");
+        }
+        tag.put("custom_waystone_names", waystoneNamesNbt);
 
         createFile(toJson(tag), difference > 0);
         difference = 0;
